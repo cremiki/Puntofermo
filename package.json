@@ -1,0 +1,12 @@
+{
+  "name": "puntofermo-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Demo del portale presenze Punto Fermo (tablet kiosk + dashboard admin)",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
