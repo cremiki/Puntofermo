@@ -12,7 +12,7 @@ Demo interattiva del sistema di timbrature e gestione turni per la catena di pia
 
 **Dashboard Admin (sede / store manager)**
 - **Live Ops**: KPI presenti, in pausa, ritardi > 10 min, assenti; avvisi per filiale; feed timbrature in tempo reale
-- **Pianificazione turni**: matrice settimanale con template trascinabili, ore vs monte contrattuale, fabbisogno pranzo/cena, duplica settimana, pubblica
+- **Pianificazione turni**: matrice settimanale con template trascinabili, turni personalizzati (nuovi template o orario su misura per singola cella, anche spezzati), ore vs monte contrattuale, fabbisogno pranzo/cena, duplica settimana, pubblica
 - **Foglio ore & report**: confronto programmato/timbrature, ritardi, causali (Ferie, ROL, Malattia, Recupero), export simulati
   - Area riservata (PIN demo **1234**): ore eccedenti, ripartizione banca ore/liquidazione, foglio ore eccedenti con totale ore da recuperare
 - **Anagrafica**: 80 collaboratori con ricerca e filtri, modifica scheda, nuovo dipendente, disattivazione, badge QR

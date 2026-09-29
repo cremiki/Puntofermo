@@ -61,6 +61,24 @@ const SHIFTS = {
 // minimo pranzo / cena per giorno (Lun..Dom)
 const REQ_PRANZO = [2, 2, 2, 2, 3, 3, 3];
 const REQ_CENA = [2, 2, 2, 3, 3, 3, 3];
+// finestre di servizio: un turno copre il pranzo/la cena se vi rientra per almeno questi minuti
+const WIN_PRANZO = [720, 870, 90];   // 12:00–14:30, almeno 1h30
+const WIN_CENA = [1170, 1350, 120];  // 19:30–22:30, almeno 2h
+const overlap = (segs, [a, b]) => segs.reduce((t, [x, y]) => t + Math.max(0, Math.min(y, b) - Math.max(x, a)), 0);
+const coverOf = (code) => { const sh = code && SHIFTS[code]; if (!sh) return { pr: false, ce: false }; return { pr: overlap(sh.segs, WIN_PRANZO) >= WIN_PRANZO[2], ce: overlap(sh.segs, WIN_CENA) >= WIN_CENA[2] }; };
+const toMin = (t) => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+let customSeq = 0;
+// crea (o riusa) un turno personalizzato; template=true lo mostra tra i template riutilizzabili
+function addCustomShift({ nome, segs, template }) {
+  const range = segs.map(([a, b]) => `${hm(a)}–${b === 1440 ? "24:00" : hm(b)}`).join(" · ");
+  const h = segs.reduce((t, [a, b]) => t + (b - a), 0) / 60;
+  const label = nome || range;
+  const existing = Object.values(SHIFTS).find((x) => x.custom && x.range === range && x.label === label);
+  if (existing) { if (template) existing.template = true; return existing.code; }
+  const code = `X${++customSeq}`;
+  SHIFTS[code] = { code, label, range, h, segs, custom: true, template: !!template, cls: "bg-violet-100 text-violet-900 border-violet-300", dot: "bg-violet-500" };
+  return code;
+}
 
 const DUOMO = [
   { nome: "Marco", cognome: "Rossi", ruolo: "Piadista", ore: 40, week: ["R", "S", "S", "C", "S", "C", "P"] },
@@ -659,11 +677,99 @@ function seedPlan(branchId, offset) {
   return plan;
 }
 
+
+/* turno personalizzato: nuovo template o orario su misura per una cella */
+function ShiftModal({ open, target, onClose, onSave }) {
+  const [nome, setNome] = useState("");
+  const [a1, setA1] = useState("10:00"); const [b1, setB1] = useState("15:00");
+  const [split, setSplit] = useState(false);
+  const [a2, setA2] = useState("19:00"); const [b2, setB2] = useState("23:00");
+  const [asTemplate, setAsTemplate] = useState(true);
+  const [tried, setTried] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const sh = target && target.code ? SHIFTS[target.code] : null;
+    const segs = sh && sh.segs.length ? sh.segs : [[600, 900]];
+    const t = (m) => (m >= 1440 ? "00:00" : hm(m));
+    setA1(t(segs[0][0])); setB1(t(segs[0][1]));
+    setSplit(segs.length > 1); if (segs[1]) { setA2(t(segs[1][0])); setB2(t(segs[1][1])); } else { setA2("19:00"); setB2("23:00"); }
+    setNome(sh && sh.custom && sh.label !== sh.range ? sh.label : "");
+    setAsTemplate(!target); setTried(false);
+  }, [open]);
+  useEffect(() => { if (!open) return; const h = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [open]);
+  if (!open) return null;
+
+  const end = (t) => { const m = toMin(t); return m === 0 ? 1440 : m; }; // 00:00 come fine = mezzanotte
+  const segs = [[toMin(a1), end(b1)]].concat(split ? [[toMin(a2), end(b2)]] : []);
+  let error = null;
+  if (segs.some(([a, b]) => a == null || b == null)) error = "Compila tutti gli orari.";
+  else if (segs.some(([a, b]) => b - a < 30)) error = "Ogni fascia deve durare almeno 30 minuti e finire dopo l'inizio.";
+  else if (split && segs[1][0] < segs[0][1]) error = "La seconda fascia deve iniziare dopo la fine della prima.";
+  const hours = error ? 0 : segs.reduce((t, [a, b]) => t + (b - a), 0) / 60;
+  const cov = error ? { pr: false, ce: false } : { pr: overlap(segs, WIN_PRANZO) >= WIN_PRANZO[2], ce: overlap(segs, WIN_CENA) >= WIN_CENA[2] };
+  const presets = [["Apertura", "10:00", "15:00"], ["Pranzo lungo", "11:00", "16:00"], ["Serale breve", "19:00", "22:00"], ["Chiusura", "20:00", "00:00"]];
+
+  const submit = (e) => { e.preventDefault(); setTried(true); if (error) return; onSave({ nome: nome.trim(), segs, template: asTemplate }); };
+
+  return (
+    <Modal open={open} onClose={onClose} width="max-w-md">
+      <form onSubmit={submit} className="p-6 flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.14em] text-violet-700 font-semibold">Turno personalizzato</div>
+            <h3 className="font-display text-3xl uppercase text-slate-900 leading-none mt-1">{target ? `${target.nome} · ${GIORNI_LUNGHI[target.day]}` : "Nuovo template"}</h3>
+            <p className="text-sm text-slate-500 mt-1">{target ? "Orario su misura solo per questa giornata." : "Comparirà tra i template, pronto da assegnare o trascinare."}</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Chiudi"><X size={18} /></button>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {presets.map(([l, a, b]) => (
+            <button type="button" key={l} onClick={() => { setA1(a); setB1(b); setSplit(false); }} className="rounded-full px-2.5 py-1 text-xs ring-1 ring-slate-300 text-slate-600 hover:bg-slate-100 tabular-nums">{l} {a}–{b === "00:00" ? "24:00" : b}</button>
+          ))}
+        </div>
+
+        <Field label="Nome (facoltativo)" id="cs-nome" hint="Se lo lasci vuoto il turno si chiama con i suoi orari"><input id="cs-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="es. Apertura, Evento, Inventario" className="sel" maxLength={24} /></Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={split ? "Prima fascia · inizio" : "Inizio"} id="cs-a1"><input id="cs-a1" type="time" step="900" value={a1} onChange={(e) => setA1(e.target.value)} className="sel tabular-nums" /></Field>
+          <Field label={split ? "Prima fascia · fine" : "Fine"} id="cs-b1"><input id="cs-b1" type="time" step="900" value={b1} onChange={(e) => setB1(e.target.value)} className="sel tabular-nums" /></Field>
+          {split && <Field label="Seconda fascia · inizio" id="cs-a2"><input id="cs-a2" type="time" step="900" value={a2} onChange={(e) => setA2(e.target.value)} className="sel tabular-nums" /></Field>}
+          {split && <Field label="Seconda fascia · fine" id="cs-b2"><input id="cs-b2" type="time" step="900" value={b2} onChange={(e) => setB2(e.target.value)} className="sel tabular-nums" /></Field>}
+        </div>
+        <button type="button" onClick={() => setSplit(!split)} className="self-start text-sm font-medium text-violet-700 hover:underline underline-offset-4 flex items-center gap-1.5">{split ? <><X size={14} /> Rimuovi seconda fascia</> : <><Plus size={14} /> Aggiungi seconda fascia (spezzato)</>}</button>
+
+        <div className="rounded-lg bg-slate-50 ring-1 ring-slate-200 px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div><div className="stat-l">Ore</div><div className="font-display text-3xl tabular-nums text-slate-900 leading-none mt-1">{error ? "—" : fmtH(Math.round(hours * 100) / 100)}</div></div>
+          <div className="flex gap-2 text-xs">
+            <span className={`rounded-full px-2 py-1 font-semibold ${cov.pr ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-500"}`}>{cov.pr ? "Copre il pranzo" : "Non copre il pranzo"}</span>
+            <span className={`rounded-full px-2 py-1 font-semibold ${cov.ce ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-500"}`}>{cov.ce ? "Copre la cena" : "Non copre la cena"}</span>
+          </div>
+        </div>
+        <p className="text-xs text-slate-500 -mt-2">Conta per il fabbisogno pranzo se lavora almeno 1h30 tra 12:00 e 14:30, per la cena se lavora almeno 2h tra 19:30 e 22:30. Per un turno che termina a mezzanotte inserisci 00:00.</p>
+
+        {target && (
+          <label htmlFor="cs-tpl" className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input id="cs-tpl" type="checkbox" checked={asTemplate} onChange={(e) => setAsTemplate(e.target.checked)} className="h-4 w-4 accent-violet-600" /> Salva anche tra i template per riusarlo
+          </label>
+        )}
+        {tried && error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex justify-end gap-2 pt-1">
+          <button type="button" onClick={onClose} className="btn-ghost">Annulla</button>
+          <button type="submit" className="btn-dark !bg-violet-700 hover:!bg-violet-800"><Save size={15} /> {target ? `Applica a ${GIORNI_LUNGHI[target.day].toLowerCase()}` : "Crea template"}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function Planning({ toast, plans, setPlans, published, setPublished }) {
   const [branch, setBranch] = useState("bs-citta");
   const [offset, setOffset] = useState(0);
   const [active, setActive] = useState("P");
   const [dragOver, setDragOver] = useState(null);
+  const [shiftModal, setShiftModal] = useState(null); // null · { } nuovo template · { empId, nome, day, code } cella
+  const [, bump] = useState(0);
   const key = `${branch}|${offset}`;
   const plan = plans[key] || seedPlan(branch, offset);
   const staff = EMPLOYEES.filter((e) => e.filiale === branch && isActive(e));
@@ -678,7 +784,7 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
   const hoursOf = (id) => rowOf(id).reduce((s, c) => s + (c ? SHIFTS[c].h : 0), 0);
   const coverage = GIORNI.map((_, d) => {
     let pr = 0, ce = 0;
-    staff.forEach((e) => { const c = rowOf(e.id)[d]; if (c === "P" || c === "S") pr++; if (c === "C" || c === "S") ce++; });
+    staff.forEach((e) => { const cv = coverOf(rowOf(e.id)[d]); if (cv.pr) pr++; if (cv.ce) ce++; });
     return { pr, ce };
   });
   const over = staff.filter((e) => hoursOf(e.id) > e.ore);
@@ -700,7 +806,19 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
     else toast({ title: "Turni pubblicati", body: `${staff.length} collaboratori di ${filialeNome(branch)} hanno ricevuto la notifica.` });
   };
 
-  const templates = ["P", "PR", "C", "S", "R"];
+  const templates = ["P", "PR", "C", "S", "R"].concat(Object.values(SHIFTS).filter((x) => x.custom && x.template).map((x) => x.code));
+  const saveCustom = (data) => {
+    const code = addCustomShift(data);
+    if (shiftModal && shiftModal.empId) {
+      setCell(shiftModal.empId, shiftModal.day, code);
+      toast({ title: "Orario personalizzato applicato", body: `${shiftModal.nome} · ${GIORNI_LUNGHI[shiftModal.day]}: ${SHIFTS[code].range} (${fmtH(SHIFTS[code].h)})${data.template ? " · salvato anche tra i template" : ""}.` });
+    } else {
+      setActive(code);
+      toast({ title: "Template creato", body: `${SHIFTS[code].label} · ${SHIFTS[code].range}. È selezionato: clicca le celle per assegnarlo.` });
+    }
+    setShiftModal(null); bump((n) => n + 1);
+  };
+  const removeTemplate = (code) => { SHIFTS[code].template = false; if (active === code) setActive("P"); bump((n) => n + 1); toast({ title: "Template rimosso", body: "I turni già assegnati con questo orario restano in griglia." }); };
 
   return (
     <div className="flex flex-col gap-5">
@@ -729,17 +847,21 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
             {templates.map((c) => {
               const s = SHIFTS[c];
               return (
-                <button key={c} draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", c); setActive(c); }} onClick={() => setActive(c)}
-                  className={`text-left rounded-lg border px-3 py-2 cursor-grab active:cursor-grabbing transition ${s.cls} ${active === c ? "ring-2 ring-offset-1 ring-slate-900 scale-[1.02]" : "opacity-90 hover:opacity-100"}`}>
+                <div key={c} className="relative group">
+                <button draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", c); setActive(c); }} onClick={() => setActive(c)}
+                  className={`w-full text-left rounded-lg border px-3 py-2 cursor-grab active:cursor-grabbing transition ${s.cls} ${active === c ? "ring-2 ring-offset-1 ring-slate-900 scale-[1.02]" : "opacity-90 hover:opacity-100"}`}>
                   <div className="text-sm font-semibold">{s.label}</div>
                   <div className="text-[11px] opacity-80 tabular-nums">{s.range}{s.h ? ` · ${fmtH(s.h)}` : ""}</div>
                 </button>
+                {s.custom && <button onClick={() => removeTemplate(c)} className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white ring-1 ring-slate-300 text-slate-500 hover:text-red-600 grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={`Rimuovi template ${s.label}`}><X size={11} /></button>}
+                </div>
               );
             })}
+            <button onClick={() => setShiftModal({})} className="text-left rounded-lg border border-dashed border-violet-300 bg-violet-50/50 px-3 py-2 text-violet-800 flex items-center gap-2 text-sm font-medium hover:bg-violet-50"><Plus size={14} /> Turno personalizzato</button>
             <button onClick={() => setActive(null)} className={`text-left rounded-lg border border-dashed border-slate-300 px-3 py-2 text-slate-600 flex items-center gap-2 text-sm ${active === null ? "ring-2 ring-offset-1 ring-slate-900" : ""}`}><Eraser size={14} /> Svuota cella</button>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 leading-relaxed">
-            Fabbisogno minimo: pranzo {REQ_PRANZO[0]} (Ven–Dom {REQ_PRANZO[6]}), cena {REQ_CENA[0]} (Gio–Dom {REQ_CENA[6]}). Il turno spezzato copre entrambi.
+            Fabbisogno minimo: pranzo {REQ_PRANZO[0]} (Ven–Dom {REQ_PRANZO[6]}), cena {REQ_CENA[0]} (Gio–Dom {REQ_CENA[6]}). Il turno spezzato copre entrambi; i turni personalizzati contano in base agli orari. Per un orario su misura in un solo giorno usa la matita sulla cella.
           </div>
         </aside>
 
@@ -766,6 +888,7 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
                       const c = rowOf(e.id)[d]; const s = c ? SHIFTS[c] : null; const k = `${e.id}-${d}`;
                       return (
                         <td key={d} className="px-1 py-1.5 border-b border-slate-100">
+                          <div className="relative group">
                           <button
                             onClick={() => setCell(e.id, d, active)}
                             onDragOver={(ev) => { ev.preventDefault(); setDragOver(k); }}
@@ -773,8 +896,10 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
                             onDrop={(ev) => { ev.preventDefault(); setDragOver(null); setCell(e.id, d, ev.dataTransfer.getData("text/plain")); }}
                             title={`${empName(e)} · ${GIORNI_LUNGHI[d]}${s ? ` · ${s.label}` : ""}`}
                             className={`w-full h-12 rounded-md border text-[11px] leading-tight transition hover:scale-[1.03] ${s ? s.cls : "border-dashed border-slate-200 text-slate-300 hover:border-slate-400 hover:text-slate-500"} ${dragOver === k ? "ring-2 ring-orange-500" : ""}`}>
-                            {s ? (<><div className="font-semibold">{s.label}</div>{s.h > 0 && <div className="opacity-75 tabular-nums">{fmtH(s.h)}</div>}</>) : "+"}
+                            {s ? (<><div className="font-semibold truncate px-1">{s.label}</div>{s.h > 0 && <div className="opacity-75 tabular-nums truncate px-1">{s.custom && s.label !== s.range ? s.range : fmtH(s.h)}</div>}</>) : "+"}
                           </button>
+                          <button onClick={() => setShiftModal({ empId: e.id, nome: empName(e), day: d, code: c })} className="absolute top-0.5 right-0.5 h-5 w-5 rounded bg-white/90 ring-1 ring-slate-300 text-slate-600 hover:text-violet-700 grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition" aria-label={`Orario personalizzato per ${empName(e)} ${GIORNI_LUNGHI[d]}`}><Pencil size={11} /></button>
+                          </div>
                         </td>
                       );
                     })}
@@ -810,6 +935,7 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
           </table>
         </div>
       </div>
+      <ShiftModal open={!!shiftModal} target={shiftModal && shiftModal.empId ? shiftModal : null} onClose={() => setShiftModal(null)} onSave={saveCustom} />
     </div>
   );
 }
@@ -1271,7 +1397,7 @@ function EmployeeDrawer({ emp, open, onClose, onSave }) {
                   <div key={g} className="flex flex-col gap-1 min-w-0">
                     <span className={`text-[11px] text-center font-semibold ${d >= 4 ? "text-orange-700" : "text-slate-500"}`}>{g}</span>
                     <select id={`f-week-${d}`} aria-label={`Turno tipo ${GIORNI_LUNGHI[d]}`} value={c} onChange={(e) => set("week", f.week.map((x, i) => (i === d ? e.target.value : x)))} className={`h-11 w-full rounded-md border text-[11px] font-semibold text-center appearance-none cursor-pointer px-0.5 ${sh.cls}`}>
-                      {Object.values(SHIFTS).map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
+                      {Object.values(SHIFTS).filter((s) => !s.custom || s.template || s.code === c).map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
                     </select>
                   </div>
                 );
