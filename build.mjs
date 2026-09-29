@@ -1,7 +1,7 @@
-// Ricostruisce index.html partendo da src/app.jsx e src/shell.html.
+// Ricostruisce public/index.html partendo da src/app.jsx e src/shell.html.
 // Uso: npm install && npm run build
 import { build } from "esbuild";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const res = await build({
   entryPoints: ["src/app.jsx"],
@@ -31,5 +31,6 @@ ${head}<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!import
 ${body}</body>
 </html>
 `;
-writeFileSync("index.html", html);
-console.log(`index.html generato (${(html.length / 1024).toFixed(0)} KB)`);
+mkdirSync("public", { recursive: true });
+writeFileSync("public/index.html", html);
+console.log(`public/index.html generato (${(html.length / 1024).toFixed(0)} KB)`);

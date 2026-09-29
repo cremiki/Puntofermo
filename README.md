@@ -28,10 +28,7 @@ Demo interattiva del sistema di timbrature e gestione turni per la catena di pia
 
 ## Pubblicazione su Vercel
 
-Il sito è statico: `index.html` è già pronto nella radice del repository.
-
-- Importa il repository nel progetto **puntofermo**
-- Framework preset: **Other**; lascia vuoti Build command e Output directory (Vercel eseguirà `npm run build`, che rigenera lo stesso `index.html`)
+Il sito è statico: la pagina pubblicata è `public/index.html`. Le impostazioni di build sono già in `vercel.json` (build `npm run build`, output `public`), quindi nel progetto **puntofermo** basta collegare il repository con il preset **Other**.
 
 ## Modificare la demo
 
@@ -39,7 +36,7 @@ Il codice sorgente è in `src/app.jsx` (React) e `src/shell.html` (stili e libre
 
 ```bash
 npm install
-npm run build   # rigenera index.html
+npm run build   # rigenera public/index.html
 ```
 
 Librerie caricate da CDN: React 18.3.1, Tailwind CSS 3.4 (play CDN), lucide-react 0.263.1, Google Fonts.
