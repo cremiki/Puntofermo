@@ -3,7 +3,7 @@ const {
   ScanLine, QrCode, Coffee, LogIn, LogOut, Wifi, WifiOff, Lock, Unlock, CalendarDays, Users, Activity,
   Clock, FileText, FileSpreadsheet, Copy, Send, AlertTriangle, CheckCircle2, X, ChevronLeft, ChevronRight,
   Search, Printer, PiggyBank, Wallet, Store, Timer, Volume2, VolumeX, Tablet, LayoutDashboard, BadgeCheck,
-  Play, Hourglass, Save, KeyRound, MapPin, Eraser, Bell, Phone, RefreshCw, Delete, Pencil, UserPlus, Mail, Briefcase,
+  Play, Hourglass, Save, KeyRound, MapPin, Eraser, Bell, Phone, RefreshCw, Delete, Pencil, UserPlus, Mail, Briefcase, Plus,
 } = LucideReact;
 
 /* ───────────────────────── utilities ───────────────────────── */
@@ -25,23 +25,30 @@ const GIORNI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const GIORNI_LUNGHI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
 /* ───────────────────────── mock data ───────────────────────── */
+// Punti vendita reali (fonte: puntofermo.net). "min" = presidio minimo per aprire il servizio.
 const FILIALI = [
-  { id: "mi-duomo", nome: "Milano Duomo", min: 3 },
-  { id: "mi-isola", nome: "Milano Isola", min: 2 },
-  { id: "mi-navigli", nome: "Milano Navigli", min: 3 },
-  { id: "mb-centro", nome: "Monza Centro", min: 2 },
-  { id: "bg-alta", nome: "Bergamo Città Alta", min: 2 },
-  { id: "bs-vittoria", nome: "Brescia Vittoria", min: 2 },
-  { id: "co-lago", nome: "Como Lago", min: 2 },
-  { id: "to-crocetta", nome: "Torino Crocetta", min: 2 },
-  { id: "vr-bra", nome: "Verona Bra", min: 2 },
-  { id: "bo-centrale", nome: "Bologna Centrale", min: 3 },
-  { id: "bo-stefano", nome: "Bologna S. Stefano", min: 2 },
-  { id: "pr-duomo", nome: "Parma Duomo", min: 2 },
-  { id: "mo-grande", nome: "Modena Piazza Grande", min: 2 },
-  { id: "rn-marina", nome: "Rimini Marina", min: 2 },
-  { id: "pd-prato", nome: "Padova Prato", min: 2 },
+  { id: "bs-citta", nome: "Brescia · Città", indirizzo: "Corso Mameli 2", cap: "25122", citta: "Brescia", tel: "030 41424", min: 3, stato: "aperta" },
+  { id: "bs-cavour", nome: "Brescia · Corso Cavour", indirizzo: "Corso Cavour 12", cap: "25121", citta: "Brescia", tel: "030 6365346", min: 3, stato: "aperta" },
+  { id: "bs-cafe", nome: "Brescia · Café", indirizzo: "Via Dalmazia 111", cap: "25125", citta: "Brescia", tel: "030 220680", min: 2, stato: "aperta" },
+  { id: "bs-corfu", nome: "Brescia · Via Corfù", indirizzo: "Via Corfù 88", cap: "25124", citta: "Brescia", tel: "030 224181", min: 2, stato: "aperta" },
+  { id: "bs-acqui", nome: "Brescia · Via Divisione Acqui", indirizzo: "Via Divisione Acqui 6", cap: "25100", citta: "Brescia", tel: "030 46779", min: 3, stato: "aperta" },
+  { id: "bs-cremona", nome: "Brescia · Via Cremona", indirizzo: "Via Cremona 44", cap: "25131", citta: "Brescia", tel: "030 5055523", min: 3, stato: "aperta" },
+  { id: "bs-mella", nome: "Brescia · Via Del Mella", indirizzo: "Via del Mella 70", cap: "25131", citta: "Brescia", tel: "366 6761463", min: 2, stato: "aperta" },
+  { id: "bs-crotte", nome: "Brescia · Via Crotte", indirizzo: "Via Ponte Crotte 25/B", cap: "25127", citta: "Brescia", tel: "030 318494", min: 2, stato: "aperta" },
+  { id: "gussago", nome: "Gussago", indirizzo: "Via Pianette 53", cap: "25064", citta: "Gussago", tel: "030 2524252", min: 2, stato: "aperta" },
+  { id: "concesio", nome: "Concesio", indirizzo: "Via Europa 242/B", cap: "25062", citta: "Concesio", tel: "030 2180285", min: 2, stato: "aperta" },
+  { id: "mazzano", nome: "Mazzano", indirizzo: "Via Padana Superiore 72", cap: "25080", citta: "Mazzano", tel: "030 0978439", min: 2, stato: "aperta" },
+  { id: "rovato", nome: "Rovato", indirizzo: "Via Toscana 8", cap: "25038", citta: "Rovato", tel: "030 7243038", min: 2, stato: "aperta" },
+  { id: "chiari", nome: "Chiari", indirizzo: "Via Brescia 35", cap: "25032", citta: "Chiari", tel: "030 5052508", min: 2, stato: "aperta" },
+  { id: "salo", nome: "Salò", indirizzo: "P.zza Vittorio Emanuele II 15", cap: "25087", citta: "Salò", tel: "0365 520792", min: 2, stato: "aperta" },
+  { id: "ponte-legno", nome: "Ponte di Legno", indirizzo: "Via XXIV Maggio 15", cap: "25056", citta: "Ponte di Legno", tel: "0364 901073", min: 2, stato: "aperta" },
 ];
+const isOpen = (f) => (f.stato || "aperta") === "aperta";
+const STATO_SEDE = {
+  aperta: { label: "Aperta", cls: "bg-emerald-100 text-emerald-800" },
+  apertura: { label: "In apertura", cls: "bg-sky-100 text-sky-800" },
+  chiusa: { label: "Chiusa", cls: "bg-slate-200 text-slate-600" },
+};
 const filialeNome = (id) => FILIALI.find((f) => f.id === id)?.nome ?? id;
 
 const SHIFTS = {
@@ -87,13 +94,13 @@ function generateWeek(ore, rng) {
 }
 
 function buildEmployees() {
-  const list = DUOMO.map((d, i) => ({ id: `PF-${pad(i + 1).padStart(4, "0")}`, ...d, filiale: "mi-duomo" }));
+  const list = DUOMO.map((d, i) => ({ id: `PF-${pad(i + 1).padStart(4, "0")}`, ...d, filiale: "bs-citta" }));
   for (let i = 0; i < 73; i++) {
     const n = NOMI[i % 30];
     const c = COGNOMI[(i * 7 + Math.floor(i / 30) * 11 + 3) % 30];
     const ore = MONTI[(i * 3) % 5];
     const rng = mulberry32(hash(n + c + i));
-    list.push({ id: `PF-${String(i + 8).padStart(4, "0")}`, nome: n, cognome: c, ruolo: RUOLI[(i * 5 + 1) % 4], ore, filiale: FILIALI[1 + (i % 14)].id, week: generateWeek(ore, rng) });
+    list.push({ id: `PF-${String(i + 8).padStart(4, "0")}`, nome: n, cognome: c, ruolo: RUOLI[(i * 5 + 1) % 4], ore, filiale: FILIALI[1 + (i % (FILIALI.length - 1))].id, week: generateWeek(ore, rng) });
   }
   list.forEach((e, i) => {
     const r = mulberry32(hash(e.id + "anag"));
@@ -131,23 +138,23 @@ function initialLive(now) {
       events.push({ id: `${e.id}-out`, emp: e.id, type: "out", at: outAt });
     }
   });
-  // scenario Milano Duomo
+  // scenario sede Città
   const duomo = { "PF-0001": "fuori", "PF-0002": "turno", "PF-0003": "pausa", "PF-0004": "turno", "PF-0005": "turno", "PF-0006": "fuori", "PF-0007": "fuori" };
   Object.entries(duomo).forEach(([id, s]) => (live[id] = { stato: s }));
   live["PF-0006"] = { stato: "ritardo", since: tNow - 7 * 60000 };
-  // scenario Bologna Centrale: sotto presidio
-  const bo = EMPLOYEES.filter((e) => e.filiale === "bo-centrale");
+  // scenario via Cremona: sotto presidio
+  const bo = EMPLOYEES.filter((e) => e.filiale === "bs-cremona");
   bo.forEach((e, i) => { live[e.id] = { stato: i === 0 ? "turno" : "fuori" }; });
   if (bo[1]) live[bo[1].id] = { stato: "ritardo", since: tNow - 18 * 60000 };
   if (bo[2]) live[bo[2].id] = { stato: "assente", causale: "Malattia" };
-  const pr = EMPLOYEES.filter((e) => e.filiale === "pr-duomo");
+  const pr = EMPLOYEES.filter((e) => e.filiale === "rovato");
   if (pr[0]) live[pr[0].id] = { stato: "ritardo", since: tNow - 12 * 60000 };
-  const to = EMPLOYEES.filter((e) => e.filiale === "to-crocetta");
+  const to = EMPLOYEES.filter((e) => e.filiale === "chiari");
   if (to[1]) live[to[1].id] = { stato: "assente", causale: "Ferie" };
-  const rn = EMPLOYEES.filter((e) => e.filiale === "rn-marina");
+  const rn = EMPLOYEES.filter((e) => e.filiale === "salo");
   if (rn[0]) live[rn[0].id] = { stato: "assente", causale: "Malattia" };
   const clean = events.filter((ev) => ["turno", "pausa"].includes(live[ev.emp].stato) || ev.type === "out");
-  // eventi coerenti per Duomo
+  // eventi coerenti per la sede Città
   const dEvents = [
     { id: "d1", emp: "PF-0002", type: "in", at: tNow - 76 * 60000 },
     { id: "d2", emp: "PF-0004", type: "in", at: tNow - 74 * 60000 },
@@ -156,7 +163,7 @@ function initialLive(now) {
     { id: "d5", emp: "PF-0003", type: "pausa", at: tNow - 9 * 60000 },
     { id: "d6", emp: "PF-0007", type: "out", at: tNow - 216 * 60000 },
   ];
-  const all = clean.filter((ev) => byId[ev.emp].filiale !== "mi-duomo").concat(dEvents).sort((a, b) => b.at - a.at);
+  const all = clean.filter((ev) => byId[ev.emp].filiale !== "bs-citta").concat(dEvents).sort((a, b) => b.at - a.at);
   return { live, events: all.slice(0, 60) };
 }
 
@@ -238,19 +245,8 @@ function FakeQR({ value, size = 168 }) {
   );
 }
 
-function Logo({ dark }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 grid place-items-center shadow-inner">
-        <div className="h-3 w-3 rounded-full bg-white/95" />
-        <div className="absolute inset-1 rounded-full border border-dashed border-white/50" />
-      </div>
-      <div className="leading-none">
-        <div className={`font-display text-[22px] tracking-wide uppercase ${dark ? "text-white" : "text-slate-900"}`}>Punto Fermo</div>
-        <div className={`text-[10px] uppercase tracking-[0.18em] ${dark ? "text-amber-300/80" : "text-orange-600"}`}>Piadineria · dal 2009</div>
-      </div>
-    </div>
-  );
+function Logo({ dark, className = "h-8" }) {
+  return <img src={window.PF_LOGO} alt="Punto Fermo · Piadineria artigianale" className={`${className} w-auto max-w-full select-none ${dark ? "logo-white" : ""}`} draggable="false" />;
 }
 
 /* ───────────────────────── sound ───────────────────────── */
@@ -334,7 +330,7 @@ function Kiosk({ now, live, punch, online, setOnline, queue, kioskBranch, setKio
                 <label className="flex items-center gap-2 min-w-0">
                   <MapPin size={16} className="text-amber-400 shrink-0" />
                   <select id="kiosk-branch" value={kioskBranch} onChange={(e) => setKioskBranch(e.target.value)} className="bg-transparent font-display text-xl uppercase tracking-wide text-white focus:outline-none focus:ring-2 focus:ring-amber-400 rounded cursor-pointer">
-                    {FILIALI.map((f) => <option key={f.id} value={f.id} className="text-slate-900">{f.nome}</option>)}
+                    {FILIALI.filter((f) => f.stato !== "chiusa").map((f) => <option key={f.id} value={f.id} className="text-slate-900">{f.nome}</option>)}
                   </select>
                 </label>
               </div>
@@ -404,6 +400,7 @@ function Kiosk({ now, live, punch, online, setOnline, queue, kioskBranch, setKio
                       );
                     })}
                   </div>
+                  {demo.length === 0 && <div className="rounded-xl bg-white/5 ring-1 ring-white/10 px-4 py-3 text-sm text-amber-100/70">Nessun collaboratore assegnato a questa sede. Aggiungilo da Dashboard Admin → Anagrafica.</div>}
                   <button onClick={() => scan(null)} disabled={phase === "scanning" || (phase === "done" && cool > 0)} className="mt-2 text-xs text-amber-100/50 hover:text-amber-100 underline underline-offset-4 disabled:opacity-40">Simula badge non riconosciuto</button>
                 </div>
               </div>
@@ -516,7 +513,7 @@ function Kpi({ label, value, icon: Icon, tone, sub }) {
   );
 }
 
-function LiveOps({ now, live, events, online, queue, toast }) {
+function LiveOps({ now, live, events, online, queue, toast, kioskBranch }) {
   const [branch, setBranch] = useState("all");
   const [dismissed, setDismissed] = useState([]);
   const [feedFilter, setFeedFilter] = useState("all");
@@ -527,7 +524,7 @@ function LiveOps({ now, live, events, online, queue, toast }) {
   const late = staff.filter((e) => live[e.id].stato === "ritardo" && lateMin(e) > 10);
   const lateAll = staff.filter((e) => live[e.id].stato === "ritardo");
 
-  const branches = FILIALI.filter((f) => branch === "all" || f.id === branch).map((f) => {
+  const branches = FILIALI.filter((f) => isOpen(f) && (branch === "all" || f.id === branch)).map((f) => {
     const s = EMPLOYEES.filter((e) => e.filiale === f.id && isActive(e));
     const pres = s.filter((e) => live[e.id].stato === "turno").length;
     return { ...f, staff: s.length, pres, pausa: s.filter((e) => live[e.id].stato === "pausa").length, late: s.filter((e) => live[e.id].stato === "ritardo" && lateMin(e) > 10).length, ass: s.filter((e) => live[e.id].stato === "assente").length };
@@ -536,7 +533,7 @@ function LiveOps({ now, live, events, online, queue, toast }) {
   const alerts = [];
   branches.forEach((b) => { if (b.pres < b.min) alerts.push({ id: `pres-${b.id}`, tone: "red", title: `${b.nome}: sotto presidio minimo di apertura`, body: `${b.pres} in turno su ${b.min} richiesti per il servizio cena.`, branch: b.nome }); });
   late.forEach((e) => alerts.push({ id: `late-${e.id}`, tone: "orange", title: `${filialeNome(e.filiale)} · Ritardo: +${lateMin(e)} min`, body: `${empName(e)} (${e.ruolo}) non ha ancora timbrato l'ingresso.`, branch: filialeNome(e.filiale) }));
-  if (!online && (branch === "all" || branch === "mi-duomo")) alerts.push({ id: "offline-duomo", tone: "slate", title: "Milano Duomo: tablet offline", body: `${queue.length} timbrature in attesa di sincronizzazione. I dati della filiale potrebbero non essere aggiornati.`, branch: "Milano Duomo" });
+  if (!online && (branch === "all" || branch === kioskBranch)) alerts.push({ id: "offline-kiosk", tone: "slate", title: `${filialeNome(kioskBranch)}: tablet offline`, body: `${queue.length} timbrature in attesa di sincronizzazione. I dati della filiale potrebbero non essere aggiornati.`, branch: filialeNome(kioskBranch) });
   const shownAlerts = alerts.filter((a) => !dismissed.includes(a.id));
 
   const feed = events.filter((ev) => inScope(byId[ev.emp]) && (feedFilter === "all" || ev.type === feedFilter)).slice(0, 18);
@@ -551,7 +548,7 @@ function LiveOps({ now, live, events, online, queue, toast }) {
         <label className="flex items-center gap-2 text-sm">
           <Store size={16} className="text-slate-500" />
           <select id="liveops-branch" value={branch} onChange={(e) => setBranch(e.target.value)} className="sel">
-            <option value="all">Tutte le 15 filiali</option>
+            <option value="all">Tutte le {FILIALI.filter(isOpen).length} sedi aperte</option>
             {FILIALI.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
           </select>
         </label>
@@ -594,7 +591,7 @@ function LiveOps({ now, live, events, online, queue, toast }) {
                   const ok = b.pres >= b.min;
                   return (
                     <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-2.5 font-medium text-slate-800 whitespace-nowrap"><span className={`inline-block h-2 w-2 rounded-full mr-2 ${ok ? "bg-emerald-500" : "bg-red-500 animate-pulse"}`} />{b.nome}{b.id === "mi-duomo" && !online && <WifiOff size={13} className="inline ml-1.5 text-slate-400" />}</td>
+                      <td className="px-4 py-2.5 font-medium text-slate-800 whitespace-nowrap"><span className={`inline-block h-2 w-2 rounded-full mr-2 ${ok ? "bg-emerald-500" : "bg-red-500 animate-pulse"}`} />{b.nome}{b.id === kioskBranch && !online && <WifiOff size={13} className="inline ml-1.5 text-slate-400" />}</td>
                       <td className="px-2 py-2.5">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div className={`h-full ${ok ? "bg-emerald-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (b.pres / Math.max(b.min, 1)) * 100)}%` }} /></div>
@@ -656,14 +653,14 @@ function seedPlan(branchId, offset) {
   const plan = {};
   staff.forEach((e) => {
     if (offset === 0) plan[e.id] = [...e.week];
-    else if (offset === -1) plan[e.id] = branchId === "mi-duomo" ? { "PF-0001": ["S", "S", "R", "C", "S", "C", "P"], "PF-0002": ["C", "P", "R", "C", "S", "S", "R"], "PF-0003": ["S", "R", "C", "S", "C", "P", "S"], "PF-0004": ["P", "C", "P", "R", "P", "S", "C"], "PF-0005": ["R", "R", "C", "C", "R", "C", "C"], "PF-0006": ["S", "C", "R", "S", "C", "PR", "S"], "PF-0007": ["PR", "PR", "P", "R", "P", "P", "R"] }[e.id] : generateWeek(e.ore, mulberry32(hash(e.id + "prev")));
+    else if (offset === -1) plan[e.id] = branchId === "bs-citta" ? { "PF-0001": ["S", "S", "R", "C", "S", "C", "P"], "PF-0002": ["C", "P", "R", "C", "S", "S", "R"], "PF-0003": ["S", "R", "C", "S", "C", "P", "S"], "PF-0004": ["P", "C", "P", "R", "P", "S", "C"], "PF-0005": ["R", "R", "C", "C", "R", "C", "C"], "PF-0006": ["S", "C", "R", "S", "C", "PR", "S"], "PF-0007": ["PR", "PR", "P", "R", "P", "P", "R"] }[e.id] : generateWeek(e.ore, mulberry32(hash(e.id + "prev")));
     else plan[e.id] = Array(7).fill(null);
   });
   return plan;
 }
 
 function Planning({ toast, plans, setPlans, published, setPublished }) {
-  const [branch, setBranch] = useState("mi-duomo");
+  const [branch, setBranch] = useState("bs-citta");
   const [offset, setOffset] = useState(0);
   const [active, setActive] = useState("P");
   const [dragOver, setDragOver] = useState(null);
@@ -756,6 +753,7 @@ function Planning({ toast, plans, setPlans, published, setPublished }) {
               </tr>
             </thead>
             <tbody>
+              {staff.length === 0 && <tr><td colSpan={9} className="px-4 py-10 text-center text-slate-500">Nessun collaboratore in questa sede. Assegnalo da Anagrafica → Nuovo dipendente o Modifica.</td></tr>}
               {staff.map((e) => {
                 const h = hoursOf(e.id); const isOver = h > e.ore; const pct = Math.min(100, (h / e.ore) * 100);
                 return (
@@ -915,7 +913,7 @@ function PinModal({ open, onClose, onOk }) {
 
 function Timesheet({ toast }) {
   const [month, setMonth] = useState(8);
-  const [branch, setBranch] = useState("mi-duomo");
+  const [branch, setBranch] = useState("bs-citta");
   const staff = EMPLOYEES.filter((e) => e.filiale === branch && isActive(e));
   const [empId, setEmpId] = useState("PF-0003");
   const emp = (byId[empId] && byId[empId].filiale === branch && isActive(byId[empId]) ? byId[empId] : staff[0]) || EMPLOYEES.find(isActive);
@@ -983,7 +981,7 @@ function Timesheet({ toast }) {
 
       <div className="flex flex-wrap gap-2 items-center">
         <select id="ts-month" value={month} onChange={(e) => setMonth(+e.target.value)} className="sel">{MESI.map((m) => <option key={m.m} value={m.m}>{m.label}</option>)}</select>
-        <select id="ts-branch" value={branch} onChange={(e) => { setBranch(e.target.value); setEmpId((EMPLOYEES.find((x) => x.filiale === e.target.value && isActive(x)) || {}).id); }} className="sel">{FILIALI.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
+        <select id="ts-branch" value={branch} onChange={(e) => { setBranch(e.target.value); setEmpId((EMPLOYEES.find((x) => x.filiale === e.target.value && isActive(x)) || {}).id); }} className="sel">{FILIALI.filter((f) => EMPLOYEES.some((x) => x.filiale === f.id && isActive(x))).map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
         <select id="ts-emp" value={emp.id} onChange={(e) => setEmpId(e.target.value)} className="sel">{staff.map((e) => <option key={e.id} value={e.id}>{empName(e)} · {e.ore}h</option>)}</select>
         <span className="text-xs text-slate-500 ml-1">{emp.ruolo} · contratto {emp.ore}h/settimana · matricola {emp.id}</span>
       </div>
@@ -1164,7 +1162,7 @@ function nextMatricola() {
   const max = EMPLOYEES.reduce((m, e) => Math.max(m, parseInt(e.id.slice(3), 10)), 0);
   return `PF-${String(max + 1).padStart(4, "0")}`;
 }
-const EMPTY_EMP = { nome: "", cognome: "", telefono: "", email: "", filiale: "mi-duomo", ruolo: "Piadista", ore: 30, contratto: "Indeterminato", assunzione: "2026-10-01", week: ["R", "R", "R", "R", "R", "R", "R"], attivo: true };
+const EMPTY_EMP = { nome: "", cognome: "", telefono: "", email: "", filiale: "bs-citta", ruolo: "Piadista", ore: 30, contratto: "Indeterminato", assunzione: "2026-10-01", week: ["R", "R", "R", "R", "R", "R", "R"], attivo: true };
 
 function Field({ label, id, error, hint, children }) {
   return (
@@ -1320,14 +1318,13 @@ function EmployeeDrawer({ emp, open, onClose, onSave }) {
 function BadgeCard({ emp, rev }) {
   return (
     <div className="mx-auto w-[300px] max-w-full rounded-2xl overflow-hidden shadow-xl ring-1 ring-slate-200 bg-white">
-      <div className="relative bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 px-5 pt-5 pb-12 text-white">
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full border-[10px] border-white/15" />
-        <div className="absolute right-6 top-10 h-10 w-10 rounded-full border-2 border-dashed border-white/40" />
-        <div className="font-display text-2xl uppercase tracking-wide leading-none">Punto Fermo</div>
-        <div className="text-[10px] uppercase tracking-[0.2em] text-white/80 mt-1">Piadineria · Badge collaboratore</div>
+      <div className="relative bg-brand px-5 pt-5 pb-12 text-white overflow-hidden">
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full border-[10px] border-white/10" />
+        <Logo dark className="h-9" />
+        <div className="text-[10px] uppercase tracking-[0.2em] text-white/75 mt-2">Badge collaboratore</div>
       </div>
       <div className="-mt-9 px-5 pb-5">
-        <div className="h-16 w-16 rounded-full bg-slate-900 ring-4 ring-white grid place-items-center font-display text-2xl text-amber-400">{emp.nome[0]}{emp.cognome[0]}</div>
+        <div className="h-16 w-16 rounded-full bg-slate-900 ring-4 ring-white grid place-items-center font-display text-2xl text-white">{emp.nome[0]}{emp.cognome[0]}</div>
         <div className="mt-2 font-display text-3xl uppercase leading-none text-slate-900">{emp.nome}<br />{emp.cognome}</div>
         <div className="text-sm text-slate-600 mt-1">{emp.ruolo} · {filialeNome(emp.filiale)}</div>
         <div className="mt-3 flex items-center gap-3">
@@ -1365,7 +1362,7 @@ function Anagrafica({ live, toast, saveEmployee }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-4xl uppercase tracking-wide text-slate-900 leading-none">Anagrafica dipendenti</h1>
-          <p className="text-sm text-slate-500 mt-1.5">{EMPLOYEES.filter(isActive).length} collaboratori attivi su {FILIALI.length} filiali · {EMPLOYEES.filter((e) => isActive(e) && e.ore === 40).length} full-time, {EMPLOYEES.filter((e) => isActive(e) && e.ore < 40).length} part-time{EMPLOYEES.some((e) => !isActive(e)) && ` · ${EMPLOYEES.filter((e) => !isActive(e)).length} disattivati`}</p>
+          <p className="text-sm text-slate-500 mt-1.5">{EMPLOYEES.filter(isActive).length} collaboratori attivi su {FILIALI.length} sedi · {EMPLOYEES.filter((e) => isActive(e) && e.ore === 40).length} full-time, {EMPLOYEES.filter((e) => isActive(e) && e.ore < 40).length} part-time{EMPLOYEES.some((e) => !isActive(e)) && ` · ${EMPLOYEES.filter((e) => !isActive(e)).length} disattivati`}</p>
         </div>
         <button onClick={() => setEditing("new")} className="btn-primary"><UserPlus size={16} /> Nuovo dipendente</button>
       </div>
@@ -1447,6 +1444,137 @@ function Anagrafica({ live, toast, saveEmployee }) {
   );
 }
 
+
+/* ───────────────────────── ADMIN: SEDI ───────────────────────── */
+const EMPTY_SEDE = { nome: "", indirizzo: "", cap: "", citta: "", tel: "", min: 2, stato: "apertura" };
+
+function BranchDrawer({ sede, open, onClose, onSave }) {
+  const isNew = !sede;
+  const [f, setF] = useState(EMPTY_SEDE);
+  const [tried, setTried] = useState(false);
+  useEffect(() => { if (open) { setF(sede ? { ...sede } : { ...EMPTY_SEDE }); setTried(false); } }, [open, sede && sede.id]);
+  useEffect(() => { if (!open) return; const h = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [open]);
+  if (!open) return null;
+  const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
+  const errors = {};
+  if (!f.nome.trim()) errors.nome = "Inserisci il nome della sede.";
+  else if (FILIALI.some((x) => x.nome.toLowerCase() === f.nome.trim().toLowerCase() && (!sede || x.id !== sede.id))) errors.nome = "Esiste già una sede con questo nome.";
+  if (!f.indirizzo.trim()) errors.indirizzo = "Inserisci l'indirizzo.";
+  if (!f.citta.trim()) errors.citta = "Inserisci la città.";
+  if (f.cap && !/^\d{5}$/.test(f.cap)) errors.cap = "Il CAP ha 5 cifre.";
+  const valid = Object.keys(errors).length === 0;
+  const staffCount = sede ? EMPLOYEES.filter((e) => e.filiale === sede.id && isActive(e)).length : 0;
+  const submit = (e) => { e.preventDefault(); setTried(true); if (valid) onSave({ ...f, nome: f.nome.trim(), indirizzo: f.indirizzo.trim(), citta: f.citta.trim(), min: +f.min }, isNew); };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex justify-end fade-in" role="dialog" aria-modal="true" aria-labelledby="sede-title">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" onClick={onClose} />
+      <form onSubmit={submit} className="drawer-in relative h-full w-full max-w-lg bg-white shadow-2xl flex flex-col">
+        <div className="px-5 sm:px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-brand text-white grid place-items-center"><Store size={22} /></div>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-brand font-semibold">{isNew ? "Nuova sede" : "Scheda sede"}</div>
+              <h3 id="sede-title" className="font-display text-3xl uppercase leading-none text-slate-900 truncate">{f.nome || "Senza nome"}</h3>
+              {!isNew && <div className="text-xs text-slate-500 mt-0.5">{staffCount} collaboratori attivi assegnati</div>}
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1" aria-label="Chiudi"><X size={20} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 flex flex-col gap-5">
+          <Field label="Nome sede *" id="s-nome" error={tried && errors.nome} hint="Come compare su tablet, turni e report (es. Brescia · Via Milano)"><input id="s-nome" value={f.nome} onChange={(e) => set("nome", e.target.value)} className={`sel ${tried && errors.nome ? "!border-red-400" : ""}`} autoFocus /></Field>
+          <Field label="Indirizzo *" id="s-ind" error={tried && errors.indirizzo}><input id="s-ind" value={f.indirizzo} onChange={(e) => set("indirizzo", e.target.value)} placeholder="Via, numero civico" className={`sel ${tried && errors.indirizzo ? "!border-red-400" : ""}`} /></Field>
+          <div className="grid grid-cols-[110px_1fr] gap-3">
+            <Field label="CAP" id="s-cap" error={tried && errors.cap}><input id="s-cap" value={f.cap} onChange={(e) => set("cap", e.target.value.replace(/\D/g, "").slice(0, 5))} inputMode="numeric" className="sel" /></Field>
+            <Field label="Città *" id="s-citta" error={tried && errors.citta}><input id="s-citta" value={f.citta} onChange={(e) => set("citta", e.target.value)} className={`sel ${tried && errors.citta ? "!border-red-400" : ""}`} /></Field>
+          </div>
+          <Field label="Telefono" id="s-tel"><input id="s-tel" value={f.tel} onChange={(e) => set("tel", e.target.value)} inputMode="tel" placeholder="030 1234567" className="sel" /></Field>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">Presidio minimo per aprire il servizio</span>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => set("min", Math.max(1, f.min - 1))} className="icon-btn !h-10 !w-10" aria-label="Riduci presidio">−</button>
+              <span className="font-display text-4xl tabular-nums w-10 text-center text-slate-900">{f.min}</span>
+              <button type="button" onClick={() => set("min", Math.min(6, f.min + 1))} className="icon-btn !h-10 !w-10" aria-label="Aumenta presidio">+</button>
+              <span className="text-xs text-slate-500">collaboratori in turno; sotto questa soglia Live Ops segnala l'anomalia</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">Stato</span>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Stato sede">
+              {Object.entries(STATO_SEDE).map(([k, m]) => (
+                <button type="button" key={k} role="radio" aria-checked={f.stato === k} onClick={() => set("stato", k)} className={`h-10 rounded-lg text-sm font-semibold ring-1 transition ${f.stato === k ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-700 ring-slate-300 hover:ring-slate-400"}`}>{m.label}</button>
+              ))}
+            </div>
+            <span className="text-xs text-slate-500">{f.stato === "aperta" ? "Compare in Live Ops con KPI e avvisi di presidio." : f.stato === "apertura" ? "Puoi già assegnare dipendenti e pianificare i turni; non genera avvisi in Live Ops." : "Esclusa da tablet e Live Ops; lo storico resta nei report."}</span>
+            {!isNew && f.stato === "chiusa" && staffCount > 0 && <span className="text-xs text-red-600 flex items-center gap-1"><AlertTriangle size={12} /> {staffCount} collaboratori sono ancora assegnati a questa sede: trasferiscili da Anagrafica.</span>}
+          </div>
+        </div>
+        <div className="px-5 sm:px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3 bg-slate-50">
+          <span className="text-xs text-slate-500">{tried && !valid ? <span className="text-red-600">Completa i campi evidenziati.</span> : "* campi obbligatori"}</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="btn-ghost">Annulla</button>
+            <button type="submit" className="btn-primary"><Save size={15} /> {isNew ? "Crea sede" : "Salva modifiche"}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Sedi({ live, saveBranch }) {
+  const [q, setQ] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [justSaved, setJustSaved] = useState(null);
+  const list = FILIALI.filter((f) => `${f.nome} ${f.indirizzo} ${f.citta}`.toLowerCase().includes(q.toLowerCase()));
+  const byCity = FILIALI.reduce((m, f) => ((m[f.citta] = (m[f.citta] || 0) + 1), m), {});
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-4xl uppercase tracking-wide text-slate-900 leading-none">Sedi</h1>
+          <p className="text-sm text-slate-500 mt-1.5">{FILIALI.filter(isOpen).length} punti vendita aperti · {Object.entries(byCity).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c} ${n}`).join(" · ")}</p>
+        </div>
+        <button onClick={() => setEditing("new")} className="btn-primary"><Plus size={16} /> Nuova sede</button>
+      </div>
+      <label className="relative max-w-sm">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input id="sede-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca sede, via o comune" className="sel w-full pl-9" />
+      </label>
+      <div className="rounded-xl bg-white ring-1 ring-slate-200 overflow-x-auto min-w-0">
+        <table className="w-full min-w-[820px] text-sm">
+          <thead className="text-[11px] uppercase tracking-wider text-slate-500 bg-slate-50"><tr><th className="text-left px-4 py-2.5 font-semibold">Sede</th><th className="text-left px-3 py-2.5 font-semibold">Telefono</th><th className="text-center px-3 py-2.5 font-semibold">Collaboratori</th><th className="text-left px-3 py-2.5 font-semibold">Presidio ora</th><th className="text-left px-3 py-2.5 font-semibold">Stato</th><th className="px-4 py-2.5" /></tr></thead>
+          <tbody>
+            {list.map((f) => {
+              const staff = EMPLOYEES.filter((e) => e.filiale === f.id && isActive(e));
+              const pres = staff.filter((e) => live[e.id].stato === "turno").length;
+              const ok = pres >= f.min;
+              const st = STATO_SEDE[f.stato || "aperta"];
+              return (
+                <tr key={f.id} className={`border-t border-slate-100 hover:bg-slate-50 ${justSaved === f.id ? "flash" : ""} ${f.stato === "chiusa" ? "opacity-60" : ""}`}>
+                  <td className="px-4 py-2.5">
+                    <button onClick={() => setEditing(f)} className="font-medium text-slate-800 hover:text-brand hover:underline underline-offset-2 text-left">{f.nome}</button>
+                    <div className="text-xs text-slate-500 flex items-center gap-1"><MapPin size={11} /> {f.indirizzo}, {f.cap ? `${f.cap} ` : ""}{f.citta}</div>
+                  </td>
+                  <td className="px-3 py-2.5 tabular-nums text-slate-700 whitespace-nowrap select-all">{f.tel || <span className="text-slate-400">—</span>}</td>
+                  <td className="px-3 py-2.5 text-center tabular-nums text-slate-700">{staff.length}</td>
+                  <td className="px-3 py-2.5">
+                    {isOpen(f) ? <span className={`tabular-nums text-xs font-semibold ${ok ? "text-emerald-700" : "text-red-600"}`}>{pres} / {f.min} in turno</span> : <span className="text-xs text-slate-400">min. {f.min}</span>}
+                  </td>
+                  <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${st.cls}`}>{st.label}</span></td>
+                  <td className="px-4 py-2.5 text-right"><button onClick={() => setEditing(f)} className="btn-ghost"><Pencil size={14} /> Modifica</button></td>
+                </tr>
+              );
+            })}
+            {list.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">Nessuna sede corrisponde alla ricerca.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <BranchDrawer open={!!editing} sede={editing === "new" ? null : editing} onClose={() => setEditing(null)}
+        onSave={(data, isNew) => { const id = saveBranch(data, isNew ? null : editing.id); setEditing(null); setJustSaved(id); setTimeout(() => setJustSaved(null), 2400); }} />
+    </div>
+  );
+}
+
 /* ───────────────────────── APP ───────────────────────── */
 function App() {
   const [mode, setMode] = useState("kiosk");
@@ -1457,7 +1585,7 @@ function App() {
   const [events, setEvents] = useState(init.events);
   const [online, setOnlineRaw] = useState(true);
   const [queue, setQueue] = useState([]);
-  const [kioskBranch, setKioskBranch] = useState("mi-duomo");
+  const [kioskBranch, setKioskBranch] = useState("bs-citta");
   const [toasts, setToasts] = useState([]);
   const [plans, setPlans] = useState({});
   const [published, setPublished] = useState({ "mi-duomo|0": "pubblicato" });
@@ -1510,13 +1638,31 @@ function App() {
     setVer((v) => v + 1);
   };
 
+  const saveBranch = (data, id) => {
+    if (!id) {
+      const base = data.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "sede";
+      let nid = base, n = 2; while (FILIALI.some((f) => f.id === nid)) nid = `${base}-${n++}`;
+      FILIALI.push({ ...data, id: nid });
+      toast({ title: "Sede creata", body: `${data.nome} · ${STATO_SEDE[data.stato].label.toLowerCase()}. Assegna i collaboratori da Anagrafica.` });
+      setVer((v) => v + 1);
+      return nid;
+    }
+    const f = FILIALI.find((x) => x.id === id);
+    Object.assign(f, data);
+    if (f.stato === "chiusa" && kioskBranch === id) setKioskBranch(FILIALI.find((x) => x.stato !== "chiusa").id);
+    toast({ title: "Sede aggiornata", body: `${f.nome} · presidio minimo ${f.min} · ${STATO_SEDE[f.stato].label.toLowerCase()}.` });
+    setVer((v) => v + 1);
+    return id;
+  };
+
   const NAV = [
     { id: "live", label: "Live Ops", icon: Activity, hint: "Presenze in tempo reale" },
     { id: "turni", label: "Pianificazione turni", icon: CalendarDays, hint: "Matrice settimanale" },
     { id: "ore", label: "Foglio ore & report", icon: Clock, hint: "Mensile e paghe" },
-    { id: "anag", label: "Anagrafica", icon: Users, hint: "80 collaboratori" },
+    { id: "anag", label: "Anagrafica", icon: Users, hint: `${EMPLOYEES.filter(isActive).length} collaboratori` },
+    { id: "sedi", label: "Sedi", icon: Store, hint: `${FILIALI.length} punti vendita` },
   ];
-  const liveAlerts = FILIALI.filter((f) => EMPLOYEES.filter((e) => e.filiale === f.id && isActive(e) && live[e.id].stato === "turno").length < f.min).length;
+  const liveAlerts = FILIALI.filter(isOpen).filter((f) => EMPLOYEES.filter((e) => e.filiale === f.id && isActive(e) && live[e.id].stato === "turno").length < f.min).length;
 
   return (
     <div className={`min-h-screen ${mode === "kiosk" ? "bg-[#0f0b09]" : "bg-[#f3f4f6]"}`}>
@@ -1544,7 +1690,7 @@ function App() {
             <div className="hidden lg:block px-5 pt-6 pb-4">
               <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Sede centrale</div>
               <div className="text-white font-semibold mt-1">Direzione operativa</div>
-              <div className="text-xs text-slate-500">15 filiali · 80 collaboratori</div>
+              <div className="text-xs text-slate-500">{FILIALI.filter(isOpen).length} sedi · {EMPLOYEES.filter(isActive).length} collaboratori</div>
             </div>
             <ul className="flex lg:flex-col gap-1 p-2 lg:px-3 overflow-x-auto">
               {NAV.map((n) => {
@@ -1564,15 +1710,16 @@ function App() {
               })}
             </ul>
             <div className="hidden lg:block mx-3 mt-6 rounded-lg bg-white/5 p-3 text-xs">
-              <div className="flex items-center gap-2 text-slate-400"><Tablet size={14} /> Tablet Milano Duomo</div>
+              <div className="flex items-center gap-2 text-slate-400"><Tablet size={14} /> Tablet {filialeNome(kioskBranch)}</div>
               <div className={`mt-1 font-semibold flex items-center gap-1.5 ${online ? "text-emerald-400" : "text-red-400"}`}>{online ? <Wifi size={13} /> : <WifiOff size={13} />}{online ? "Online · sincronizzato" : `Offline · ${queue.length} in coda`}</div>
             </div>
           </nav>
           <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6">
-            {section === "live" && <LiveOps now={now} live={live} events={events} online={online} queue={queue} toast={toast} />}
+            {section === "live" && <LiveOps now={now} live={live} events={events} online={online} queue={queue} toast={toast} kioskBranch={kioskBranch} />}
             {section === "turni" && <Planning toast={toast} plans={plans} setPlans={setPlans} published={published} setPublished={setPublished} />}
             {section === "ore" && <Timesheet toast={toast} />}
             {section === "anag" && <Anagrafica live={live} toast={toast} saveEmployee={saveEmployee} />}
+            {section === "sedi" && <Sedi live={live} saveBranch={saveBranch} />}
           </main>
         </div>
       )}

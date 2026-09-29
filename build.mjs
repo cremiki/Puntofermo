@@ -15,8 +15,9 @@ const js = res.outputFiles[0].text;
 const shell = readFileSync("src/shell.html", "utf8");
 const cut = shell.indexOf('<div id="root">');
 const head = shell.slice(0, cut);
-const body = shell.slice(cut).replace("/*APP*/", () => js);
-const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fbbf24'/%3E%3Cstop offset='.5' stop-color='%23f97316'/%3E%3Cstop offset='1' stop-color='%23dc2626'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23fff'/%3E%3C/svg%3E";
+const logo = "data:image/png;base64," + readFileSync("src/logo.png").toString("base64");
+const body = shell.slice(cut).replace("/*LOGO*/", () => logo).replace("/*APP*/", () => js);
+const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232a7a4f'/%3E%3Cstop offset='.5' stop-color='%23165635'/%3E%3Cstop offset='1' stop-color='%230f3f27'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23fff'/%3E%3C/svg%3E";
 const html = `<!doctype html>
 <html lang="it">
 <head>
